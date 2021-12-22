@@ -33,6 +33,35 @@ var debugLog = function (message) {
   logger.debug(message, {timestamp: Date.now(), pid: process.pid});
 }
 
+var splitInput = function (inputText) {
+  var splitArr = inputText.split(' ');
+  var society="ACZ";
+  var flatBlock="";
+  if(splitArr.length>=2)
+  {
+    if(splitArr[1]!="ASZ" || splitArr[1]!="ACZ")
+    {
+      debugLog("Apartment supported is only ASZ & ACZ. Input given is "+splitArr[1]);
+      return null;
+    }
+    society = splitArr[1];
+    flatBlock=splitArr[0];
+  }
+  else
+  {
+    flatBlock=inputText;
+  }
+  var flatBlockSociety=flatBlock.split('-');
+  if(flatBlockSociety != null && flatBlockSociety.length == 2) {
+    flatBlockSociety[2]=society;
+    return flatBlockSociety;
+  } else {
+    debugLog("Flat number " + inputText + " not sent in the correct format");
+    return null;
+  }
+    
+  
+}
 var splitBlockAndFlatNumber = function (inputText) {
   var splitArr = inputText.split('-');
 
@@ -124,15 +153,15 @@ var retrievePTINData = function (blockName, flatNumber, data) {
   }
 }
 
-var queryGHMCWebsite = function (blockName, flatNumber) {
+var queryGHMCWebsite = function (blockName, flatNumber,society) {
 
   // Make it upper so that its uniform everywhere,
   if(blockName == "AB" || blockName == "ab") {
     blockName = "A&B";
   }
 
-  debugLog("Querying GHMC website for blockName - " + blockName + " Flat number " + flatNumber);
-  var url = "https://ptghmconlinepayment.cgg.gov.in/SearchYourProperty.do?method=getPropertyList&circleNo=1055&ownerName=&doorNo=1-100/ACZ/" + blockName + "/" + flatNumber + "&ptinno=&sEcho=1&iColumns=7&sColumns=%2C%2C%2C%2C%2C%2C&iDisplayStart=0&iDisplayLength=25&mDataProp_0=0&sSearch_0=&bRegex_0=false&bSearchable_0=true&bSortable_0=true&mDataProp_1=1&sSearch_1=&bRegex_1=false&bSearchable_1=true&bSortable_1=true&mDataProp_2=2&sSearch_2=&bRegex_2=false&bSearchable_2=true&bSortable_2=true&mDataProp_3=3&sSearch_3=&bRegex_3=false&bSearchable_3=true&bSortable_3=true&mDataProp_4=4&sSearch_4=&bRegex_4=false&bSearchable_4=true&bSortable_4=true&mDataProp_5=5&sSearch_5=&bRegex_5=false&bSearchable_5=true&bSortable_5=true&mDataProp_6=6&sSearch_6=&bRegex_6=false&bSearchable_6=true&bSortable_6=true&sSearch=&bRegex=false&iSortCol_0=0&sSortDir_0=asc&iSortingCols=1&_=1493029905431"
+  debugLog("Querying GHMC website for blockName - " + blockName + " Flat number " + flatNumber + "society - " + society);
+  var url = "https://ptghmconlinepayment.cgg.gov.in/SearchYourProperty.do?method=getPropertyList&circleNo=1055&ownerName=&doorNo=1-100/"+ society+ "/" + blockName + "/" + flatNumber + "&ptinno=&sEcho=1&iColumns=7&sColumns=%2C%2C%2C%2C%2C%2C&iDisplayStart=0&iDisplayLength=25&mDataProp_0=0&sSearch_0=&bRegex_0=false&bSearchable_0=true&bSortable_0=true&mDataProp_1=1&sSearch_1=&bRegex_1=false&bSearchable_1=true&bSortable_1=true&mDataProp_2=2&sSearch_2=&bRegex_2=false&bSearchable_2=true&bSortable_2=true&mDataProp_3=3&sSearch_3=&bRegex_3=false&bSearchable_3=true&bSortable_3=true&mDataProp_4=4&sSearch_4=&bRegex_4=false&bSearchable_4=true&bSortable_4=true&mDataProp_5=5&sSearch_5=&bRegex_5=false&bSearchable_5=true&bSortable_5=true&mDataProp_6=6&sSearch_6=&bRegex_6=false&bSearchable_6=true&bSortable_6=true&sSearch=&bRegex=false&iSortCol_0=0&sSortDir_0=asc&iSortingCols=1&_=1493029905431"
   debugLog("URL for querying is " + url);
 
   https.get(url, function(response) {
@@ -152,14 +181,14 @@ var queryGHMCWebsite = function (blockName, flatNumber) {
 
 var processForPTIN = function (inputText) {
   debugLog("Processing for payload " + inputText);
-  var blockAndFlat = splitBlockAndFlatNumber(inputText);
+  var blockAndFlatAndSociety = splitInput(inputText);
 
   if(blockAndFlat != null) {
-    var blockName = blockAndFlat[0];
-    var flatNumber = blockAndFlat[1];
-
-    debugLog("Querying for Block - " + blockName + " Flat Number - " + flatNumber);
-    queryGHMCWebsite(blockName, flatNumber);
+    var blockName = blockAndFlatAndSociety[0];
+    var flatNumber = blockAndFlatAndSociety[1];
+    var society = blockAndFlatAndSociety[2];
+    debugLog("Querying for Block - " + blockName + " Flat Number - " + flatNumber + " Society - " + society);
+    queryGHMCWebsite(blockName, flatNumber,society);
   } else {
     debugLog("Improper data entered for flat number. Please enter in Block-number format for ex: AB-101");
     // sendMessage("Improper data entered for flat number. Please enter in Block-number format for ex: AB-101");
